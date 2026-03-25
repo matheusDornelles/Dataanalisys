@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Means Clustering Report</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #111; line-height: 1.25; font-size: 10.5pt; }
+    h1, h2, h3 { margin: 0.4rem 0; }
+    h1 { font-size: 18pt; }
+    h2 { font-size: 14pt; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-top: 16px; }
+    h3 { font-size: 12pt; margin-top: 10px; }
+    p, li { margin: 0.25rem 0; }
+    .meta { margin-bottom: 10px; }
+    .plot { margin: 8px 0 10px; }
+    .plot img { width: 100%; max-height: 220mm; object-fit: contain; border: 1px solid #ddd; }
+    .caption { font-size: 10pt; color: #333; margin-top: 2px; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 10.5pt; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    th { background: #f5f5f5; }
+    .small { font-size: 10pt; }
+  </style>
+</head>
+<body>
+  <h1>K-Means Clustering Report (Iris Dataset)</h1>
+  <div class="meta">
+    <p><strong>Student ID:</strong> 002362581</p>
+    <p><strong>Student Name:</strong> Matheus Dornelles Barbosa Maia</p>
+    <p><strong>Repository:</strong> RDatasets.jl</p>
+  </div>
+
+  <h2>Section 1: Data Loading & Exploratory Analysis</h2>
+
+  <h3>Q1. Dataset overview</h3>
+  <ul>
+    <li>Dimensions: <strong>(150, 5)</strong></li>
+    <li>Columns: SepalLength, SepalWidth, PetalLength, PetalWidth, Species</li>
+    <li>Samples per species: setosa = 50, versicolor = 50, virginica = 50</li>
+  </ul>
+
+  <h3>Q2. Descriptive statistics (numeric features)</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SepalLength</td><td>5.8433</td><td>0.8281</td><td>4.3</td><td>7.9</td></tr>
+      <tr><td>SepalWidth</td><td>3.0573</td><td>0.4359</td><td>2.0</td><td>4.4</td></tr>
+      <tr><td>PetalLength</td><td>3.7580</td><td>1.7653</td><td>1.0</td><td>6.9</td></tr>
+      <tr><td>PetalWidth</td><td>1.1993</td><td>0.7622</td><td>0.1</td><td>2.5</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Q3. Box plots by species + interpretation</h3>
+  <div class="plot">
+    <img src="outputs/q3_boxplots_by_species.png" alt="Q3 boxplots" />
+    <div class="caption">Figure Q3: Feature distributions by species.</div>
+  </div>
+  <p>
+    <strong>Feature with greatest separation:</strong> <strong>PetalLength</strong>.
+    It shows the clearest class separation with less overlap among species compared to sepal features.
+    This is supported by its highest between-class variance proportion (eta² ≈ 0.9414), indicating strong discriminatory power.
+  </p>
+
+  <h3>Q4. Correlation heatmap + interpretation</h3>
+  <div class="plot">
+    <img src="outputs/q4_correlation_heatmap.png" alt="Q4 heatmap" />
+    <div class="caption">Figure Q4: Correlation matrix of numeric features.</div>
+  </div>
+  <p>
+    Most strongly correlated pair: <strong>PetalLength</strong> and <strong>PetalWidth</strong> (|r| = 0.9629).
+    This suggests feature redundancy, so dimensionality reduction (e.g., PCA) can capture most variance in fewer components with limited information loss.
+  </p>
+
+  <h2>Section 2: Pre-Processing & Standardisation</h2>
+
+  <h3>Q5. Matrix extraction</h3>
+  <ul>
+    <li>Constructed numeric matrix <strong>X</strong> with shape <strong>(4 × 150)</strong>.</li>
+    <li>Missing values check: <strong>false</strong> (no missing values).</li>
+  </ul>
+
+  <h3>Q6. Z-score standardisation verification</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Mean (Before)</th><th>Std (Before)</th><th>Mean (After)</th><th>Std (After)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SepalLength</td><td>5.8433</td><td>0.8281</td><td>~0.0</td><td>1.0</td></tr>
+      <tr><td>SepalWidth</td><td>3.0573</td><td>0.4359</td><td>~0.0</td><td>1.0</td></tr>
+      <tr><td>PetalLength</td><td>3.7580</td><td>1.7653</td><td>~0.0</td><td>1.0</td></tr>
+      <tr><td>PetalWidth</td><td>1.1993</td><td>0.7622</td><td>~0.0</td><td>1.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Q7. Raw vs standardised violin plots + interpretation</h3>
+  <div class="plot">
+    <img src="outputs/q7_violin_raw_vs_standardised.png" alt="Q7 violins" />
+    <div class="caption">Figure Q7: Feature distributions before and after standardisation.</div>
+  </div>
+  <p>
+    Raw features have different scales and dispersion, while standardised features are centered near zero with comparable spread.
+    This matters for K-Means because Euclidean distance is scale-sensitive: without standardisation, high-variance features dominate cluster assignments.
+  </p>
+
+  <h3>Q8. Why omitting standardisation biases K-Means</h3>
+  <p>
+    K-Means minimises squared Euclidean distances, so features with larger variance contribute disproportionately to inertia.
+    In the raw Iris data, standard deviations are: PetalLength = 1.7653, SepalLength = 0.8281, PetalWidth = 0.7622, SepalWidth = 0.4359.
+    Therefore, unscaled clustering is biased toward larger-spread dimensions (especially PetalLength), reducing balanced contribution across features.
+  </p>
+
+  <h2>Section 3: Choosing the Optimal Number of Clusters</h2>
+
+  <h3>Q9. Elbow method (WCSS, k=1..10)</h3>
+  <table>
+    <thead><tr><th>k</th><th>WCSS</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>596.0000</td></tr>
+      <tr><td>2</td><td>220.8793</td></tr>
+      <tr><td>3</td><td>139.0992</td></tr>
+      <tr><td>4</td><td>120.8287</td></tr>
+      <tr><td>5</td><td>113.1255</td></tr>
+      <tr><td>6</td><td>88.4012</td></tr>
+      <tr><td>7</td><td>80.5971</td></tr>
+      <tr><td>8</td><td>64.8771</td></tr>
+      <tr><td>9</td><td>59.4748</td></tr>
+      <tr><td>10</td><td>51.8204</td></tr>
+    </tbody>
+  </table>
+  <div class="plot">
+    <img src="outputs/q9_wcss_elbow.png" alt="Q9 elbow" />
+    <div class="caption">Figure Q9: WCSS vs k with elbow annotation at k=3.</div>
+  </div>
+
+  <h3>Q10. Silhouette scores (k=2..10)</h3>
+  <table>
+    <thead><tr><th>Rank</th><th>k</th><th>Average Silhouette</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>2</td><td>0.58175</td></tr>
+      <tr><td>2</td><td>3</td><td>0.46304</td></tr>
+      <tr><td>3</td><td>5</td><td>0.41918</td></tr>
+      <tr><td>4</td><td>4</td><td>0.39719</td></tr>
+      <tr><td>5</td><td>6</td><td>0.36162</td></tr>
+      <tr><td>6</td><td>8</td><td>0.35270</td></tr>
+      <tr><td>7</td><td>9</td><td>0.34342</td></tr>
+      <tr><td>8</td><td>7</td><td>0.33744</td></tr>
+      <tr><td>9</td><td>10</td><td>0.32966</td></tr>
+    </tbody>
+  </table>
+  <div class="plot">
+    <img src="outputs/q10_silhouette_scores.png" alt="Q10 silhouette" />
+    <div class="caption">Figure Q10: Average silhouette by k.</div>
+  </div>
+
+  <h3>Q11. Elbow vs silhouette (≤150 words)</h3>
+  <p class="small">
+    Elbow analysis optimises compactness by tracking inertia (WCSS) and selecting a point of diminishing returns as k increases.
+    Silhouette analysis optimises both cohesion and separation by comparing each sample’s intra-cluster distance with its nearest neighboring cluster distance.
+    If they conflict for Iris, silhouette is generally more informative because it directly evaluates cluster quality, not just WCSS decline.
+    In this run, elbow indicates k≈3 while silhouette peaks at k=2, but k=3 remains a strong practical choice because Iris is known to contain three species and often one pair (versicolor/virginica) overlaps.
+  </p>
+
+  <h3>Q12. Why k=1 is excluded from silhouette</h3>
+  <p>
+    Silhouette requires at least two clusters. For each point, the score uses
+    s(i) = (b(i) − a(i)) / max(a(i), b(i)), where a(i) is average intra-cluster distance and b(i)
+    is average distance to the nearest different cluster.
+    With k=1, no alternative cluster exists, so b(i) is undefined and silhouette cannot be meaningfully computed.
+  </p>
+
+  <h2>Section 4: Model Training & Cluster Profiling</h2>
+
+  <h3>Q13. Final model (k=3)</h3>
+  <ul>
+    <li>Random seed: 42</li>
+    <li>maxiter: 500, tol: 1e-8</li>
+    <li>Converged: true</li>
+    <li>Iterations: 6</li>
+    <li>Total WCSS: 139.099201</li>
+    <li>Cluster sizes: [56, 50, 44]</li>
+  </ul>
+
+  <h3>Q14. Cluster centroids</h3>
+  <table>
+    <thead><tr><th>Cluster</th><th>SepalLength</th><th>SepalWidth</th><th>PetalLength</th><th>PetalWidth</th></tr></thead>
+    <tbody>
+      <tr><td>Std C1</td><td>-0.0114</td><td>-0.8731</td><td>0.3758</td><td>0.3101</td></tr>
+      <tr><td>Std C2</td><td>-1.0112</td><td>0.8504</td><td>-1.3006</td><td>-1.2507</td></tr>
+      <tr><td>Std C3</td><td>1.1635</td><td>0.1448</td><td>0.9997</td><td>1.0266</td></tr>
+      <tr><td>Orig C1</td><td>5.8339</td><td>2.6768</td><td>4.4214</td><td>1.4357</td></tr>
+      <tr><td>Orig C2</td><td>5.0060</td><td>3.4280</td><td>1.4620</td><td>0.2460</td></tr>
+      <tr><td>Orig C3</td><td>6.8068</td><td>3.1205</td><td>5.5227</td><td>1.9818</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Q15. Grouped bar chart + interpretation</h3>
+  <div class="plot">
+    <img src="outputs/q15_grouped_feature_means_by_cluster.png" alt="Q15 grouped bar" />
+    <div class="caption">Figure Q15: Mean feature values per cluster (original scale).</div>
+  </div>
+  <p>
+    Cluster 1 is most clearly distinguished by petal measurements (PetalLength and PetalWidth), which separate groups more strongly than sepal features.
+    Sepal features vary less consistently across clusters, while petal dimensions provide clearer inter-cluster contrast.
+  </p>
+
+</body>
+</html>
